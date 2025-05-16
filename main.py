@@ -2,6 +2,8 @@ import customtkinter as ctk
 from tkinter import filedialog
 import cv2
 from PIL import Image, ImageTk
+#from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip, AudioFileClip
 import os
 
 ctk.set_appearance_mode("System")
@@ -14,7 +16,6 @@ class VideoCropApp(ctk.CTk):
         self.title("Open Clip - Inicio")
         self.geometry("900x600")
 
-        # Botones
         self.import_button = ctk.CTkButton(self, text="Importar Video", command=self.importar_video)
         self.import_button.pack(pady=10)
 
@@ -24,14 +25,12 @@ class VideoCropApp(ctk.CTk):
         self.crop_button = ctk.CTkButton(self, text="Recortar Video", command=self.recortar_video, state="disabled")
         self.crop_button.pack(pady=10)
 
-        # Variables internas
         self.video_path = None
         self.frame = None
         self.rect_start = None
         self.rect_id = None
         self.crop_coords = None
 
-        # Eventos de dibujo en el canvas
         self.canvas.bind("<Button-1>", self.marcar_inicio)
         self.canvas.bind("<B1-Motion>", self.dibujar_rectangulo)
         self.canvas.bind("<ButtonRelease-1>", self.marcar_fin)
@@ -76,7 +75,6 @@ class VideoCropApp(ctk.CTk):
         if not self.crop_coords or not self.video_path:
             return
 
-        # Escalar coords de 800x450 a dimensiones reales del video
         cap = cv2.VideoCapture(self.video_path)
         width_real = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height_real = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -112,8 +110,22 @@ class VideoCropApp(ctk.CTk):
 
         cap.release()
         out.release()
+
+        # Reinsertar audio usando moviepy
+        print("Añadiendo audio al video recortado...")
+        try:
+            original = VideoFileClip(self.video_path)
+            recortado = VideoFileClip(output_path)
+            recortado = recortado.set_audio(original.audio)
+            final_output = output_path.replace(".mp4", "_final.mp4")
+            recortado.write_videofile(final_output, codec="libx264", audio_codec="aac")
+            print("Exportación final con audio completada.")
+        except Exception as e:
+            print(f"Error al añadir audio: {e}")
         print("Video exportado correctamente.")
+
 
 if __name__ == "__main__":
     app = VideoCropApp()
     app.mainloop()
+
